@@ -125,7 +125,7 @@ public:
     }
 
     bool is_variable_in_current_scope(const std::string& var) const {
-        int var_stack_size = variables_stack.size();
+        (void)variables_stack.size(); // Suppress unused variable warning
         if(variables.count(var) > 0){
             return true;
         }
@@ -239,8 +239,7 @@ public:
 
     // New: Get next available temp register with round-robin allocation
     int get_next_temp_register_id() {
-        int temp = 0;
-        bool selected = false;
+        (void)0; // Suppress unused variable warnings
         // search for not in use
         for(int i=2;i<7;i++){
             if(!global_reg_state.in_use[i]){

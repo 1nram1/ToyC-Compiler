@@ -42,6 +42,12 @@ LEXER_CPP = $(BUILD_DIR)/lexer.cpp
 MAIN_O = $(BUILD_DIR)/main.o
 PARSER_O = $(BUILD_DIR)/parser.o
 LEXER_O = $(BUILD_DIR)/lexer.o
+SCAN_CONST_O = $(BUILD_DIR)/scan_const.o
+SCAN_UNUSED_O = $(BUILD_DIR)/scan_unused.o
+COMMON_SUBEXPR_O = $(BUILD_DIR)/common_subexpr.o
+LOOP_INVARIANT_O = $(BUILD_DIR)/loop_invariant.o
+STRENGTH_REDUCTION_O = $(BUILD_DIR)/strength_reduction.o
+TAIL_RECURSION_O = $(BUILD_DIR)/tail_recursion.o
 
 # Target executable
 TARGET = main
@@ -50,13 +56,38 @@ TARGET = main
 all: $(TARGET)
 
 # Link the executable
-$(TARGET): $(MAIN_O) $(PARSER_O) $(LEXER_O)
+$(TARGET): $(MAIN_O) $(PARSER_O) $(LEXER_O) $(SCAN_CONST_O) $(SCAN_UNUSED_O) $(COMMON_SUBEXPR_O) $(LOOP_INVARIANT_O) $(STRENGTH_REDUCTION_O) $(TAIL_RECURSION_O)
 	@mkdir -p $(BIN_DIR)
 	$(CXX) $(CXXFLAGS) $^ -o $@ $(LDFLAGS)
 	@echo "Compiler built successfully: $@"
 
 # Compile main.cpp
-$(MAIN_O): $(MAIN_CPP) $(SCAN_CONST_CPP) $(SCAN_UNUSED_CPP) $(COMMON_SUBEXPR_CPP) $(LOOP_INVARIANT_CPP) $(STRENGTH_REDUCTION_CPP) $(TAIL_RECURSION_CPP) $(PARSER_HPP) $(INCLUDE_DIR)/ast.hpp $(INCLUDE_DIR)/context.hpp $(INCLUDE_DIR)/optimizations.hpp
+$(MAIN_O): $(MAIN_CPP) $(PARSER_HPP) $(INCLUDE_DIR)/ast.hpp $(INCLUDE_DIR)/context.hpp $(INCLUDE_DIR)/optimizations.hpp
+	@mkdir -p $(BUILD_DIR)
+	$(CXX) $(CXXFLAGS) -c $< -o $@
+
+# Compile optimization files
+$(SCAN_CONST_O): $(SCAN_CONST_CPP) $(INCLUDE_DIR)/ast.hpp $(INCLUDE_DIR)/context.hpp $(INCLUDE_DIR)/optimizations.hpp
+	@mkdir -p $(BUILD_DIR)
+	$(CXX) $(CXXFLAGS) -c $< -o $@
+
+$(SCAN_UNUSED_O): $(SCAN_UNUSED_CPP) $(INCLUDE_DIR)/ast.hpp $(INCLUDE_DIR)/context.hpp $(INCLUDE_DIR)/optimizations.hpp
+	@mkdir -p $(BUILD_DIR)
+	$(CXX) $(CXXFLAGS) -c $< -o $@
+
+$(COMMON_SUBEXPR_O): $(COMMON_SUBEXPR_CPP) $(INCLUDE_DIR)/ast.hpp $(INCLUDE_DIR)/context.hpp $(INCLUDE_DIR)/optimizations.hpp
+	@mkdir -p $(BUILD_DIR)
+	$(CXX) $(CXXFLAGS) -c $< -o $@
+
+$(LOOP_INVARIANT_O): $(LOOP_INVARIANT_CPP) $(INCLUDE_DIR)/ast.hpp $(INCLUDE_DIR)/context.hpp $(INCLUDE_DIR)/optimizations.hpp
+	@mkdir -p $(BUILD_DIR)
+	$(CXX) $(CXXFLAGS) -c $< -o $@
+
+$(STRENGTH_REDUCTION_O): $(STRENGTH_REDUCTION_CPP) $(INCLUDE_DIR)/ast.hpp $(INCLUDE_DIR)/context.hpp $(INCLUDE_DIR)/optimizations.hpp
+	@mkdir -p $(BUILD_DIR)
+	$(CXX) $(CXXFLAGS) -c $< -o $@
+
+$(TAIL_RECURSION_O): $(TAIL_RECURSION_CPP) $(INCLUDE_DIR)/ast.hpp $(INCLUDE_DIR)/context.hpp $(INCLUDE_DIR)/optimizations.hpp
 	@mkdir -p $(BUILD_DIR)
 	$(CXX) $(CXXFLAGS) -c $< -o $@
 

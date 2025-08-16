@@ -36,7 +36,7 @@ public:
     virtual bool can_strength_reduce() const { return false; }
     // New: Virtual function to get complexity score for optimization
     virtual int get_complexity() const { return 1; }
-    virtual const std::string& get_expr_type() const { return ""; }
+    virtual std::string get_expr_type() const { return ""; }
     // New: Virtual function to clone expression
     virtual Expr* clone() const = 0;
     int result_reg = 0;
@@ -62,7 +62,7 @@ public:
     bool is_constant(Context& context) const override { return true; }
     int evaluate_constant(Context& context) const override { return value; }
     int get_value() const { return value; }
-    const std::string& get_expr_type() const override { return "Integer"; }
+    std::string get_expr_type() const override { return "Integer"; }
     Expr* clone() const override { return new IntegerExpr(value, result_reg); }
 };
 
@@ -77,7 +77,7 @@ public:
     void collect_variables(std::unordered_set<std::string>& variables) const override {
         variables.insert(id);
     }
-    const std::string& get_expr_type() const override { return "Id"; }
+    std::string get_expr_type() const override { return "Id"; }
     bool is_constant(Context& context) const override {
         return (context.is_const.find(id) == context.is_const.end() ? false : context.is_const.at(id));
     }
@@ -132,7 +132,7 @@ public:
     const Expr* get_rhs() const { return rhs.get(); }
     Expr* get_rhs() { return rhs.get(); }
     const std::string& get_op() const { return op; }
-    const std::string& get_expr_type() const override { return "BinaryOp"; }
+    std::string get_expr_type() const override { return "BinaryOp"; }
     Expr* clone() const override { 
         return new BinaryOpExpr(op, std::unique_ptr<Expr>(lhs->clone()), std::unique_ptr<Expr>(rhs->clone())); 
     }
@@ -168,7 +168,7 @@ public:
     const Expr* get_expr() const { return expr.get(); }
     Expr* get_expr() { return expr.get(); }
     const std::string& get_op() const { return op; }
-    const std::string& get_expr_type() const override { return "UnaryOp"; }
+    std::string get_expr_type() const override { return "UnaryOp"; }
     Expr* clone() const override { 
         return new UnaryOpExpr(op, std::unique_ptr<Expr>(expr->clone())); 
     }
@@ -198,7 +198,7 @@ public:
     IdExpr* get_id() { return id.get(); }
     const Expr* get_expr() const { return expr.get(); }
     Expr* get_expr() { return expr.get(); }
-    const std::string& get_expr_type() const override { return "Assign"; }
+    std::string get_expr_type() const override { return "Assign"; }
     Expr* clone() const override { 
         return new AssignExpr(std::unique_ptr<IdExpr>(new IdExpr(id->get_id())), 
                              std::unique_ptr<Expr>(expr->clone())); 
@@ -488,7 +488,7 @@ public:
     
     // Function calls are not pure (they may have side effects)
     bool is_pure() const override { return false; }
-    const std::string& get_expr_type() const override { return "FunctionCall"; }
+    std::string get_expr_type() const override { return "FunctionCall"; }
     Expr* clone() const override { 
         ArgumentList cloned_args;
         for (const auto& arg : arguments) {
