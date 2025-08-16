@@ -4,8 +4,6 @@ void TailRecursionPass::run(ProgramWithFunctions& program, Context& context) {
     // 遍历所有函数，检测并优化尾递归
     for (auto& func : program.get_functions()) {
         if (func->has_body() && is_tail_recursive(func.get())) {
-            std::cout << "# Tail recursion detected in function: " << func->get_name() << std::endl;
-            
             // 转换为循环
             auto loop_body = convert_to_loop(func.get(), context);
             if (loop_body) {
@@ -27,7 +25,6 @@ void TailRecursionPass::run(ProgramWithFunctions& program, Context& context) {
                 
                 // 替换函数体
                 func->set_body(std::move(new_body));
-                std::cout << "# Tail recursion converted to loop in function: " << func->get_name() << std::endl;
             }
         }
     }

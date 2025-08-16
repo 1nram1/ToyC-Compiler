@@ -59,7 +59,6 @@ std::unique_ptr<Expr> CommonSubexprPass::optimize_expr(Expr* expr, Context& cont
     auto it = expr_cache.find(hash);
     if (it != expr_cache.end()) {
         // 找到公共子表达式，替换为临时变量
-        std::cout << "# CSE: Replacing duplicate expression with " << it->second.temp_var << std::endl;
         return replace_with_temp(it->second.temp_var);
     }
     
@@ -67,8 +66,6 @@ std::unique_ptr<Expr> CommonSubexprPass::optimize_expr(Expr* expr, Context& cont
     if (should_cache_expr(expr)) {
         std::string temp_var = generate_temp_var();
         expr_cache[hash] = {hash, std::unique_ptr<Expr>(expr->clone()), temp_var, true};
-        
-        std::cout << "# CSE: Caching expression as " << temp_var << std::endl;
         
         // 递归优化子表达式
         if (auto binary_op = dynamic_cast<BinaryOpExpr*>(expr)) {
@@ -148,9 +145,27 @@ bool CommonSubexprPass::should_cache_expr(Expr* expr) const {
     if (auto binary_op = dynamic_cast<BinaryOpExpr*>(expr)) {
         // 缓存算术和逻辑运算
         const std::string& op = binary_op->get_op();
-        return op == "+" || op == "-" || op == "*" || op == "/" || op == "%" ||
-               op == "==" || op == "!=" || op == "<" || op == ">" || op == "<=" || op == ">=" ||
-               op == "&&" || op == "||";
+        if (op == "+" || op == "-" || op == "*" || op == "/" || op == "%" ||
+            op == "==" || op == "!=" || op == "<" || op == ">" || op == "<=" || op == ">=" ||
+            op == "&&" || op == "||") {
+            
+            // 检查是否值得缓存（避免缓存简单表达式）
+            auto lhs = binary_op->get_lhs();
+            auto rhs = binary_op->get_rhs();
+            
+            // 如果两个操作数都是常量，不值得缓存
+            if (lhs->is_constant() && rhs->is_constant()) {
+                return false;
+            }
+            
+            // 如果操作数是简单变量或常量，且操作简单，不值得缓存
+            if ((dynamic_cast<IdExpr*>(lhs) || dynamic_cast<IntegerExpr*>(lhs)) &&
+                (dynamic_cast<IdExpr*>(rhs) || dynamic_cast<IntegerExpr*>(rhs))) {
+                return op == "*" || op == "/" || op == "%"; // 只缓存复杂运算
+            }
+            
+            return true;
+        }
     } else if (auto unary_op = dynamic_cast<UnaryOpExpr*>(expr)) {
         // 缓存一元运算
         const std::string& op = unary_op->get_op();

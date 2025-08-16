@@ -109,6 +109,19 @@ private:
     std::unordered_set<std::string> collect_loop_variables(WhileStmt* loop) const;
 };
 
+// Algebraic optimization
+class AlgebraicPass : public OptimizationPass {
+public:
+    void run(ProgramWithFunctions& program, Context& context) override;
+    std::string get_name() const override { return "Algebraic Optimization"; }
+    
+private:
+    std::unique_ptr<Expr> optimize_expr(Expr* expr, Context& context);
+    std::unique_ptr<Expr> optimize_binary_op(BinaryOpExpr* expr, Context& context);
+    bool is_constant_foldable(Expr* expr) const;
+    int fold_constant(Expr* expr, Context& context) const;
+};
+
 // Initialize static counter
 int CommonSubexprPass::temp_counter = 0;
 

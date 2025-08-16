@@ -68,7 +68,13 @@ std::unique_ptr<Expr> StrengthReductionPass::optimize_binary_op(BinaryOpExpr* ex
         // 检查左操作数是否为常量
         if (auto int_lhs = dynamic_cast<IntegerExpr*>(expr->get_lhs())) {
             int value = int_lhs->get_value();
-            if (is_power_of_two(value)) {
+            if (value == 0) {
+                // x * 0 -> 0
+                return std::make_unique<IntegerExpr>(0);
+            } else if (value == 1) {
+                // x * 1 -> x
+                return std::unique_ptr<Expr>(expr->get_rhs()->clone());
+            } else if (is_power_of_two(value)) {
                 // x * 2^n -> x << n
                 int shift = get_power_of_two(value);
                 auto shift_expr = std::make_unique<BinaryOpExpr>(
@@ -76,7 +82,6 @@ std::unique_ptr<Expr> StrengthReductionPass::optimize_binary_op(BinaryOpExpr* ex
                     std::unique_ptr<Expr>(expr->get_rhs()->clone()),
                     std::make_unique<IntegerExpr>(shift)
                 );
-                std::cout << "# Strength reduction: " << value << " * x -> x << " << shift << std::endl;
                 return shift_expr;
             }
         }
@@ -84,7 +89,13 @@ std::unique_ptr<Expr> StrengthReductionPass::optimize_binary_op(BinaryOpExpr* ex
         // 检查右操作数是否为常量
         if (auto int_rhs = dynamic_cast<IntegerExpr*>(expr->get_rhs())) {
             int value = int_rhs->get_value();
-            if (is_power_of_two(value)) {
+            if (value == 0) {
+                // x * 0 -> 0
+                return std::make_unique<IntegerExpr>(0);
+            } else if (value == 1) {
+                // x * 1 -> x
+                return std::unique_ptr<Expr>(expr->get_lhs()->clone());
+            } else if (is_power_of_two(value)) {
                 // x * 2^n -> x << n
                 int shift = get_power_of_two(value);
                 auto shift_expr = std::make_unique<BinaryOpExpr>(
@@ -92,7 +103,6 @@ std::unique_ptr<Expr> StrengthReductionPass::optimize_binary_op(BinaryOpExpr* ex
                     std::unique_ptr<Expr>(expr->get_lhs()->clone()),
                     std::make_unique<IntegerExpr>(shift)
                 );
-                std::cout << "# Strength reduction: x * " << value << " -> x << " << shift << std::endl;
                 return shift_expr;
             }
         }
@@ -103,7 +113,10 @@ std::unique_ptr<Expr> StrengthReductionPass::optimize_binary_op(BinaryOpExpr* ex
         // 检查右操作数是否为2的幂
         if (auto int_rhs = dynamic_cast<IntegerExpr*>(expr->get_rhs())) {
             int value = int_rhs->get_value();
-            if (is_power_of_two(value)) {
+            if (value == 1) {
+                // x / 1 -> x
+                return std::unique_ptr<Expr>(expr->get_lhs()->clone());
+            } else if (is_power_of_two(value)) {
                 // x / 2^n -> x >> n (对于正数)
                 int shift = get_power_of_two(value);
                 auto shift_expr = std::make_unique<BinaryOpExpr>(
@@ -111,7 +124,6 @@ std::unique_ptr<Expr> StrengthReductionPass::optimize_binary_op(BinaryOpExpr* ex
                     std::unique_ptr<Expr>(expr->get_lhs()->clone()),
                     std::make_unique<IntegerExpr>(shift)
                 );
-                std::cout << "# Strength reduction: x / " << value << " -> x >> " << shift << std::endl;
                 return shift_expr;
             }
         }
@@ -122,7 +134,10 @@ std::unique_ptr<Expr> StrengthReductionPass::optimize_binary_op(BinaryOpExpr* ex
         // 检查右操作数是否为2的幂
         if (auto int_rhs = dynamic_cast<IntegerExpr*>(expr->get_rhs())) {
             int value = int_rhs->get_value();
-            if (is_power_of_two(value)) {
+            if (value == 1) {
+                // x % 1 -> 0
+                return std::make_unique<IntegerExpr>(0);
+            } else if (is_power_of_two(value)) {
                 // x % 2^n -> x & (2^n - 1)
                 int mask = value - 1;
                 auto and_expr = std::make_unique<BinaryOpExpr>(
@@ -130,8 +145,33 @@ std::unique_ptr<Expr> StrengthReductionPass::optimize_binary_op(BinaryOpExpr* ex
                     std::unique_ptr<Expr>(expr->get_lhs()->clone()),
                     std::make_unique<IntegerExpr>(mask)
                 );
-                std::cout << "# Strength reduction: x % " << value << " -> x & " << mask << std::endl;
                 return and_expr;
+            }
+        }
+    }
+    
+    // 优化加法运算
+    else if (op == "+") {
+        if (auto int_lhs = dynamic_cast<IntegerExpr*>(expr->get_lhs())) {
+            if (int_lhs->get_value() == 0) {
+                // 0 + x -> x
+                return std::unique_ptr<Expr>(expr->get_rhs()->clone());
+            }
+        }
+        if (auto int_rhs = dynamic_cast<IntegerExpr*>(expr->get_rhs())) {
+            if (int_rhs->get_value() == 0) {
+                // x + 0 -> x
+                return std::unique_ptr<Expr>(expr->get_lhs()->clone());
+            }
+        }
+    }
+    
+    // 优化减法运算
+    else if (op == "-") {
+        if (auto int_rhs = dynamic_cast<IntegerExpr*>(expr->get_rhs())) {
+            if (int_rhs->get_value() == 0) {
+                // x - 0 -> x
+                return std::unique_ptr<Expr>(expr->get_lhs()->clone());
             }
         }
     }

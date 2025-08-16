@@ -56,9 +56,6 @@ void LoopInvariantPass::optimize_loop(const LoopInfo& loop_info, Context& contex
     auto invariant_stmts = extract_invariants(loop, context);
     
     if (!invariant_stmts.empty()) {
-        std::cout << "# Loop invariant code motion: Moving " << invariant_stmts.size() 
-                  << " statements out of loop" << std::endl;
-        
         // 创建新的循环体，移除不变量
         auto new_loop_body = create_optimized_loop_body(loop, invariant_stmts);
         
