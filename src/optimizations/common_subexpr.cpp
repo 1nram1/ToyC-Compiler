@@ -1,9 +1,6 @@
 #include "optimizations.hpp"
 #include <sstream>
 
-// Initialize static counter
-int CommonSubexprPass::temp_counter = 0;
-
 void CommonSubexprPass::run(ProgramWithFunctions& program, Context& context) {
     // 遍历所有函数进行公共子表达式消除
     for (const auto& func : program.get_functions()) {
@@ -44,12 +41,10 @@ void CommonSubexprPass::optimize_stmt(Stmt* stmt, Context& context) {
                 return_stmt->set_expr(std::move(optimized_expr));
             }
         }
-    } else if (auto expr_stmt = dynamic_cast<ExprStmt*>(stmt)) {
-        if (auto assign_expr = dynamic_cast<AssignExpr*>(expr_stmt->get_expr())) {
-            auto optimized_expr = optimize_expr(assign_expr->get_expr(), context);
-            if (optimized_expr) {
-                assign_expr->set_expr(std::move(optimized_expr));
-            }
+    } else if (auto assign_stmt = dynamic_cast<AssignExpr*>(stmt)) {
+        auto optimized_expr = optimize_expr(assign_stmt->get_expr(), context);
+        if (optimized_expr) {
+            assign_stmt->set_expr(std::move(optimized_expr));
         }
     }
 }
@@ -162,7 +157,6 @@ bool CommonSubexprPass::should_cache_expr(Expr* expr) const {
         return op == "-" || op == "!";
     } else if (auto func_call = dynamic_cast<FunctionCallExpr*>(expr)) {
         // 缓存函数调用（假设是纯函数）
-        (void)func_call; // 避免未使用变量警告
         return true;
     }
     

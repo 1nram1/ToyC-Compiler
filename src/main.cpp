@@ -7,13 +7,8 @@
 #include <algorithm>
 #include "context.hpp"
 #include "ast.hpp"
-#include "optimizations.hpp"
 #include "optimizations/scan_const.cpp"
 #include "optimizations/scan_unused.cpp"
-#include "optimizations/common_subexpr.cpp"
-#include "optimizations/loop_invariant.cpp"
-#include "optimizations/strength_reduction.cpp"
-#include "optimizations/tail_recursion.cpp"
 
 // External variables from parser
 extern std::unique_ptr<ProgramWithFunctions> parsed_program;
@@ -507,16 +502,12 @@ void DeclStmt::generate_code(std::ostream& os, Context& context) const {
 
 void EmptyStmt::generate_code(std::ostream& os, Context& context) const {
     // Empty statement generates no code
-    (void)os; // 避免未使用参数警告
-    (void)context; // 避免未使用参数警告
 }
 
 // Implementation for new function-related AST nodes
 
 void Parameter::generate_code(std::ostream& os, Context& context) const {
     // Parameters don't generate code directly, they're handled by function declarations
-    (void)os; // 避免未使用参数警告
-    (void)context; // 避免未使用参数警告
 }
 
 void FunctionDecl::generate_code(std::ostream& os, Context& context) const {
@@ -681,8 +672,6 @@ void generate_error_labels(std::ostream& os) {
 }
 
 int main(int argc, char* argv[]) {
-    (void)argc; // 避免未使用参数警告
-    (void)argv; // 避免未使用参数警告
     // Parse the input
     if (yyparse() != 0) {
         std::cerr << "Parsing failed!" << std::endl;
@@ -693,18 +682,6 @@ int main(int argc, char* argv[]) {
     // Generate code if parsing was successful
     if (parsed_program) {
         Context context;
-        
-        // Run optimizations
-        OptimizationManager optimizer(context);
-        optimizer.add_pass(std::make_unique<StrengthReductionPass>());
-        optimizer.add_pass(std::make_unique<CommonSubexprPass>());
-        optimizer.add_pass(std::make_unique<LoopInvariantPass>());
-        optimizer.add_pass(std::make_unique<TailRecursionPass>());
-        
-        std::cout << "# Running optimizations..." << std::endl;
-        optimizer.run_all(*parsed_program);
-        std::cout << "# Optimizations completed." << std::endl;
-        
         parsed_program->generate_code(std::cout, context);
         generate_error_labels(std::cout);
     } else {

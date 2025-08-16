@@ -40,6 +40,11 @@ void StrengthReductionPass::optimize_stmt(Stmt* stmt, Context& context) {
                 return_stmt->set_expr(std::move(optimized_expr));
             }
         }
+    } else if (auto assign_stmt = dynamic_cast<AssignExpr*>(stmt)) {
+        auto optimized_expr = optimize_expr(assign_stmt->get_expr(), context);
+        if (optimized_expr) {
+            assign_stmt->set_expr(std::move(optimized_expr));
+        }
     }
 }
 
