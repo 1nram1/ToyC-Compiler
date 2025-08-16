@@ -43,7 +43,11 @@ public:
 };
 
 // Base class for all statements
-class Stmt : public Node {};
+class Stmt : public Node {
+public:
+    // Virtual function to clone statement
+    virtual Stmt* clone() const = 0;
+};
 
 // Type alias for a list of statements
 using StmtList = std::vector<std::unique_ptr<Stmt>>;
@@ -124,7 +128,9 @@ public:
     }
     // Accessor methods for optimizations
     const Expr* get_lhs() const { return lhs.get(); }
+    Expr* get_lhs() { return lhs.get(); }
     const Expr* get_rhs() const { return rhs.get(); }
+    Expr* get_rhs() { return rhs.get(); }
     const std::string& get_op() const { return op; }
     const std::string& get_expr_type() const override { return "BinaryOp"; }
     Expr* clone() const override { 
@@ -160,6 +166,7 @@ public:
     }
     // Accessor methods for optimizations
     const Expr* get_expr() const { return expr.get(); }
+    Expr* get_expr() { return expr.get(); }
     const std::string& get_op() const { return op; }
     const std::string& get_expr_type() const override { return "UnaryOp"; }
     Expr* clone() const override { 
@@ -188,8 +195,10 @@ public:
     void scan_unused(Context& context) const override;
     // Accessor methods for optimizations
     const IdExpr* get_id() const { return id.get(); }
+    IdExpr* get_id() { return id.get(); }
     const Expr* get_expr() const { return expr.get(); }
-    const std::string& get_expr_type() const override { return "UnaryOp"; }
+    Expr* get_expr() { return expr.get(); }
+    const std::string& get_expr_type() const override { return "Assign"; }
     Expr* clone() const override { 
         return new AssignExpr(std::unique_ptr<IdExpr>(new IdExpr(id->get_id())), 
                              std::unique_ptr<Expr>(expr->clone())); 
@@ -212,8 +221,10 @@ public:
     void scan_unused(Context& context) const override;
     // Accessor method for optimizations
     const Expr* get_expr() const { return expr.get(); }
+    Expr* get_expr() { return expr.get(); }
     // Setter method for optimizations
     void set_expr(std::unique_ptr<Expr> new_expr) { expr = std::move(new_expr); }
+    Stmt* clone() const override { return new ExprStmt(std::unique_ptr<Expr>(expr->clone())); }
 };
 
 // Represents a return statement
@@ -230,8 +241,12 @@ public:
     void scan_unused(Context& context) const override;
     // Accessor method for optimizations
     const Expr* get_expr() const { return expr.get(); }
+    Expr* get_expr() { return expr.get(); }
     // Setter method for optimizations
     void set_expr(std::unique_ptr<Expr> new_expr) { expr = std::move(new_expr); }
+    Stmt* clone() const override { 
+        return new ReturnStmt(expr ? std::unique_ptr<Expr>(expr->clone()) : nullptr); 
+    }
 };
 
 // Represents a block of statements
@@ -250,9 +265,17 @@ public:
     void scan_unused(Context& context) const override;
     // Accessor methods for optimizations
     const StmtList& get_stmts() const { return stmts; }
+    StmtList& get_stmts() { return stmts; }
     // Setter methods for optimizations
     void add_stmt(std::unique_ptr<Stmt> stmt) { stmts.push_back(std::move(stmt)); }
     void clear_stmts() { stmts.clear(); }
+    Stmt* clone() const override {
+        StmtList cloned_stmts;
+        for (const auto& stmt : stmts) {
+            cloned_stmts.push_back(std::unique_ptr<Stmt>(stmt->clone()));
+        }
+        return new BlockStmt(std::move(cloned_stmts));
+    }
 };
 
 // Represents an if-else statement
@@ -272,6 +295,20 @@ public:
     }
     void scan_const_variables(Context& context) const override;
     void scan_unused(Context& context) const override;
+    // Accessor methods for optimizations
+    const Expr* get_condition() const { return condition.get(); }
+    Expr* get_condition() { return condition.get(); }
+    const Stmt* get_then_stmt() const { return then_stmt.get(); }
+    Stmt* get_then_stmt() { return then_stmt.get(); }
+    const Stmt* get_else_stmt() const { return else_stmt.get(); }
+    Stmt* get_else_stmt() { return else_stmt.get(); }
+    Stmt* clone() const override {
+        return new IfStmt(
+            std::unique_ptr<Expr>(condition->clone()),
+            std::unique_ptr<Stmt>(then_stmt->clone()),
+            else_stmt ? std::unique_ptr<Stmt>(else_stmt->clone()) : nullptr
+        );
+    }
 };
 
 // Represents a while loop
@@ -291,21 +328,31 @@ public:
     void scan_unused(Context& context) const override;
     // Accessor methods for optimizations
     const Expr* get_condition() const { return condition.get(); }
+    Expr* get_condition() { return condition.get(); }
     const Stmt* get_body() const { return body.get(); }
+    Stmt* get_body() { return body.get(); }
     // Setter methods for optimizations
     void set_body(std::unique_ptr<Stmt> new_body) { body = std::move(new_body); }
+    Stmt* clone() const override {
+        return new WhileStmt(
+            std::unique_ptr<Expr>(condition->clone()),
+            std::unique_ptr<Stmt>(body->clone())
+        );
+    }
 };
 
 // Represents a break statement
 class BreakStmt : public Stmt {
 public:
     void generate_code(std::ostream& os, Context& context) const override;
+    Stmt* clone() const override { return new BreakStmt(); }
 };
 
 // Represents a continue statement
 class ContinueStmt : public Stmt {
 public:
     void generate_code(std::ostream& os, Context& context) const override;
+    Stmt* clone() const override { return new ContinueStmt(); }
 };
 
 // Represents a variable declaration
@@ -323,12 +370,24 @@ public:
     }
     void scan_const_variables(Context& context) const override;
     void scan_unused(Context& context) const override;
+    // Accessor methods for optimizations
+    const IdExpr* get_id() const { return id.get(); }
+    IdExpr* get_id() { return id.get(); }
+    const Expr* get_expr() const { return expr.get(); }
+    Expr* get_expr() { return expr.get(); }
+    Stmt* clone() const override {
+        return new DeclStmt(
+            std::unique_ptr<IdExpr>(new IdExpr(id->get_id())),
+            expr ? std::unique_ptr<Expr>(expr->clone()) : nullptr
+        );
+    }
 };
 
 // Represents an empty statement (just a semicolon)
 class EmptyStmt : public Stmt {
 public:
     void generate_code(std::ostream& os, Context& context) const override;
+    Stmt* clone() const override { return new EmptyStmt(); }
 };
 
 // Represents a function parameter
@@ -364,7 +423,9 @@ public:
     const std::string& get_return_type() const { return return_type; }
     const std::string& get_name() const { return name; }
     const ParameterList& get_parameters() const { return parameters; }
+    ParameterList& get_parameters() { return parameters; }
     const Stmt* get_body() const { return body.get(); }
+    Stmt* get_body() { return body.get(); }
     bool has_body() const { return body != nullptr; }
     // Setter methods for optimizations
     void set_body(std::unique_ptr<Stmt> new_body) { body = std::move(new_body); }

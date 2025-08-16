@@ -52,6 +52,9 @@ public:
     std::string get_name() const override { return "Strength Reduction"; }
     
 private:
+    void optimize_function(FunctionDecl* func, Context& context);
+    void optimize_stmt(Stmt* stmt, Context& context);
+    std::unique_ptr<Expr> optimize_expr(Expr* expr, Context& context);
     std::unique_ptr<Expr> optimize_binary_op(BinaryOpExpr* expr, Context& context);
     bool is_power_of_two(int value) const;
     int get_power_of_two(int value) const;
@@ -83,6 +86,11 @@ private:
         bool used = false;
     };
     
+    void optimize_function(FunctionDecl* func, Context& context);
+    void optimize_stmt(Stmt* stmt, Context& context);
+    std::unique_ptr<Expr> optimize_expr(Expr* expr, Context& context);
+    bool should_cache_expr(Expr* expr) const;
+    
     std::unordered_map<std::string, ExprInfo> expr_cache;
     std::string generate_expr_hash(Expr* expr) const;
     std::unique_ptr<Expr> replace_with_temp(const std::string& temp_var) const;
@@ -103,13 +111,20 @@ private:
         std::vector<std::unique_ptr<Stmt>> invariant_stmts;
     };
     
+    void optimize_function(FunctionDecl* func, Context& context);
+    void optimize_loop(const LoopInfo& loop_info, Context& context);
+    std::unique_ptr<Stmt> create_optimized_loop_body(WhileStmt* loop, 
+                                                   const std::vector<std::unique_ptr<Stmt>>& invariant_stmts);
     std::vector<LoopInfo> find_loops(Stmt* stmt) const;
     bool is_invariant(Expr* expr, const std::unordered_set<std::string>& loop_vars) const;
+    bool is_invariant(Expr* expr, WhileStmt* loop) const;
+    bool is_invariant_stmt(Stmt* stmt, WhileStmt* loop) const;
     std::vector<std::unique_ptr<Stmt>> extract_invariants(WhileStmt* loop, Context& context);
     std::unordered_set<std::string> collect_loop_variables(WhileStmt* loop) const;
+    void collect_assigned_vars(Stmt* stmt, std::unordered_set<std::string>& vars) const;
 };
 
 // Initialize static counter
-int CommonSubexprPass::temp_counter = 0;
+// int CommonSubexprPass::temp_counter = 0;
 
 #endif // TOYC_OPTIMIZATIONS_HPP

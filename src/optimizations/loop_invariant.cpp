@@ -106,8 +106,10 @@ bool LoopInvariantPass::is_invariant_stmt(Stmt* stmt, WhileStmt* loop) const {
             return is_invariant(decl_stmt->get_expr(), loop);
         }
         return true; // 没有初始化的声明是不变的
-    } else if (auto assign_stmt = dynamic_cast<AssignExpr*>(stmt)) {
-        return is_invariant(assign_stmt->get_expr(), loop);
+    } else if (auto expr_stmt = dynamic_cast<ExprStmt*>(stmt)) {
+        if (auto assign_expr = dynamic_cast<AssignExpr*>(expr_stmt->get_expr())) {
+            return is_invariant(assign_expr->get_expr(), loop);
+        }
     }
     
     return false;
@@ -166,8 +168,10 @@ void LoopInvariantPass::collect_assigned_vars(Stmt* stmt, std::unordered_set<std
         }
     } else if (auto while_stmt = dynamic_cast<WhileStmt*>(stmt)) {
         collect_assigned_vars(while_stmt->get_body(), vars);
-    } else if (auto assign_stmt = dynamic_cast<AssignExpr*>(stmt)) {
-        vars.insert(assign_stmt->get_id()->get_id());
+    } else if (auto expr_stmt = dynamic_cast<ExprStmt*>(stmt)) {
+        if (auto assign_expr = dynamic_cast<AssignExpr*>(expr_stmt->get_expr())) {
+            vars.insert(assign_expr->get_id()->get_id());
+        }
     } else if (auto decl_stmt = dynamic_cast<DeclStmt*>(stmt)) {
         vars.insert(decl_stmt->get_id()->get_id());
     }

@@ -7,6 +7,7 @@
 #include <algorithm>
 #include "context.hpp"
 #include "ast.hpp"
+#include "optimizations.hpp"
 #include "optimizations/scan_const.cpp"
 #include "optimizations/scan_unused.cpp"
 
@@ -682,6 +683,18 @@ int main(int argc, char* argv[]) {
     // Generate code if parsing was successful
     if (parsed_program) {
         Context context;
+        
+        // Run optimizations
+        OptimizationManager optimizer(context);
+        optimizer.add_pass(std::make_unique<StrengthReductionPass>());
+        optimizer.add_pass(std::make_unique<CommonSubexprPass>());
+        optimizer.add_pass(std::make_unique<LoopInvariantPass>());
+        optimizer.add_pass(std::make_unique<TailRecursionPass>());
+        
+        std::cout << "# Running optimizations..." << std::endl;
+        optimizer.run_all(*parsed_program);
+        std::cout << "# Optimizations completed." << std::endl;
+        
         parsed_program->generate_code(std::cout, context);
         generate_error_labels(std::cout);
     } else {

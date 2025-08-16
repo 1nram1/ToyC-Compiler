@@ -27,6 +27,10 @@ PARSER_Y = $(SRC_DIR)/parser.y
 LEXER_FLEX = $(SRC_DIR)/lexer.flex
 SCAN_CONST_CPP = $(SRC_DIR)/optimizations/scan_const.cpp
 SCAN_UNUSED_CPP = $(SRC_DIR)/optimizations/scan_unused.cpp
+COMMON_SUBEXPR_CPP = $(SRC_DIR)/optimizations/common_subexpr.cpp
+LOOP_INVARIANT_CPP = $(SRC_DIR)/optimizations/loop_invariant.cpp
+STRENGTH_REDUCTION_CPP = $(SRC_DIR)/optimizations/strength_reduction.cpp
+TAIL_RECURSION_CPP = $(SRC_DIR)/optimizations/tail_recursion.cpp
 MAIN_CPP = $(SRC_DIR)/main.cpp
 
 # Generated files
@@ -52,7 +56,7 @@ $(TARGET): $(MAIN_O) $(PARSER_O) $(LEXER_O)
 	@echo "Compiler built successfully: $@"
 
 # Compile main.cpp
-$(MAIN_O): $(MAIN_CPP) $(SCAN_CONST_CPP) $(SCAN_UNUSED_CPP) $(PARSER_HPP) $(INCLUDE_DIR)/ast.hpp $(INCLUDE_DIR)/context.hpp
+$(MAIN_O): $(MAIN_CPP) $(SCAN_CONST_CPP) $(SCAN_UNUSED_CPP) $(COMMON_SUBEXPR_CPP) $(LOOP_INVARIANT_CPP) $(STRENGTH_REDUCTION_CPP) $(TAIL_RECURSION_CPP) $(PARSER_HPP) $(INCLUDE_DIR)/ast.hpp $(INCLUDE_DIR)/context.hpp $(INCLUDE_DIR)/optimizations.hpp
 	@mkdir -p $(BUILD_DIR)
 	$(CXX) $(CXXFLAGS) -c $< -o $@
 
