@@ -52,9 +52,6 @@ public:
     std::string get_name() const override { return "Strength Reduction"; }
     
 private:
-    void optimize_function(FunctionDecl* func, Context& context);
-    void optimize_stmt(Stmt* stmt, Context& context);
-    std::unique_ptr<Expr> optimize_expr(Expr* expr, Context& context);
     std::unique_ptr<Expr> optimize_binary_op(BinaryOpExpr* expr, Context& context);
     bool is_power_of_two(int value) const;
     int get_power_of_two(int value) const;
@@ -87,11 +84,7 @@ private:
     };
     
     std::unordered_map<std::string, ExprInfo> expr_cache;
-    void optimize_function(FunctionDecl* func, Context& context);
-    void optimize_stmt(Stmt* stmt, Context& context);
-    std::unique_ptr<Expr> optimize_expr(Expr* expr, Context& context);
-    std::string generate_expr_hash(const Expr* expr) const;
-    bool should_cache_expr(Expr* expr) const;
+    std::string generate_expr_hash(Expr* expr) const;
     std::unique_ptr<Expr> replace_with_temp(const std::string& temp_var) const;
     std::string generate_temp_var() const;
     static int temp_counter;
@@ -107,32 +100,13 @@ private:
     struct LoopInfo {
         WhileStmt* loop;
         std::unordered_set<std::string> loop_vars;
+        std::vector<std::unique_ptr<Stmt>> invariant_stmts;
     };
     
-    void optimize_function(FunctionDecl* func, Context& context);
     std::vector<LoopInfo> find_loops(Stmt* stmt) const;
-    void optimize_loop(const LoopInfo& loop_info, Context& context);
-    std::vector<std::unique_ptr<Stmt>> extract_invariants(WhileStmt* loop, Context& context);
-    bool is_invariant_stmt(Stmt* stmt, WhileStmt* loop) const;
     bool is_invariant(Expr* expr, const std::unordered_set<std::string>& loop_vars) const;
+    std::vector<std::unique_ptr<Stmt>> extract_invariants(WhileStmt* loop, Context& context);
     std::unordered_set<std::string> collect_loop_variables(WhileStmt* loop) const;
-    void collect_assigned_vars(Stmt* stmt, std::unordered_set<std::string>& vars) const;
-    std::unique_ptr<Stmt> create_optimized_loop_body(WhileStmt* loop, const std::vector<std::unique_ptr<Stmt>>& invariant_stmts);
-};
-
-// Algebraic optimization
-class AlgebraicPass : public OptimizationPass {
-public:
-    void run(ProgramWithFunctions& program, Context& context) override;
-    std::string get_name() const override { return "Algebraic Optimization"; }
-    
-private:
-    void optimize_function(FunctionDecl* func, Context& context);
-    void optimize_stmt(Stmt* stmt, Context& context);
-    std::unique_ptr<Expr> optimize_expr(Expr* expr, Context& context);
-    std::unique_ptr<Expr> optimize_binary_op(BinaryOpExpr* expr, Context& context);
-    bool is_constant_foldable(Expr* expr, Context& context) const;
-    int fold_constant(Expr* expr, Context& context) const;
 };
 
 // Initialize static counter
