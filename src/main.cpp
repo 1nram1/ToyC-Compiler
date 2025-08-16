@@ -639,12 +639,16 @@ void DeclStmt::generate_code(std::ostream& os, Context& context) const {
 }
 
 void EmptyStmt::generate_code(std::ostream& os, Context& context) const {
+    (void)os;
+    (void)context;
     // Empty statement generates no code
 }
 
 // Implementation for new function-related AST nodes
 
 void Parameter::generate_code(std::ostream& os, Context& context) const {
+    (void)os;
+    (void)context;
     // Parameters don't generate code directly, they're handled by function declarations
 }
 
@@ -797,6 +801,8 @@ void generate_error_labels(std::ostream& os) {
 }
 
 int main(int argc, char* argv[]) {
+    (void)argc;
+    (void)argv;
     // Parse the input
     if (yyparse() != 0) {
         std::cerr << "Parsing failed!" << std::endl;

@@ -13,7 +13,7 @@ void CommonSubexprPass::run(ProgramWithFunctions& program, Context& context) {
 void CommonSubexprPass::optimize_function(FunctionDecl* func, Context& context) {
     if (func->get_body()) {
         expr_cache.clear();
-        optimize_stmt(func->get_body(), context);
+        optimize_stmt(const_cast<Stmt*>(func->get_body()), context);
     }
 }
 
@@ -23,26 +23,26 @@ void CommonSubexprPass::optimize_stmt(Stmt* stmt, Context& context) {
             optimize_stmt(s.get(), context);
         }
     } else if (auto if_stmt = dynamic_cast<IfStmt*>(stmt)) {
-        optimize_stmt(if_stmt->get_then_stmt(), context);
+        optimize_stmt(const_cast<Stmt*>(if_stmt->get_then_stmt()), context);
         if (if_stmt->get_else_stmt()) {
-            optimize_stmt(if_stmt->get_else_stmt(), context);
+            optimize_stmt(const_cast<Stmt*>(if_stmt->get_else_stmt()), context);
         }
     } else if (auto while_stmt = dynamic_cast<WhileStmt*>(stmt)) {
-        optimize_stmt(while_stmt->get_body(), context);
+        optimize_stmt(const_cast<Stmt*>(while_stmt->get_body()), context);
     } else if (auto expr_stmt = dynamic_cast<ExprStmt*>(stmt)) {
-        auto optimized_expr = optimize_expr(expr_stmt->get_expr(), context);
+        auto optimized_expr = optimize_expr(const_cast<Expr*>(expr_stmt->get_expr()), context);
         if (optimized_expr) {
             expr_stmt->set_expr(std::move(optimized_expr));
         }
     } else if (auto return_stmt = dynamic_cast<ReturnStmt*>(stmt)) {
         if (return_stmt->get_expr()) {
-            auto optimized_expr = optimize_expr(return_stmt->get_expr(), context);
+            auto optimized_expr = optimize_expr(const_cast<Expr*>(return_stmt->get_expr()), context);
             if (optimized_expr) {
                 return_stmt->set_expr(std::move(optimized_expr));
             }
         }
     } else if (auto assign_stmt = dynamic_cast<AssignExpr*>(stmt)) {
-        auto optimized_expr = optimize_expr(assign_stmt->get_expr(), context);
+        auto optimized_expr = optimize_expr(const_cast<Expr*>(assign_stmt->get_expr()), context);
         if (optimized_expr) {
             assign_stmt->set_expr(std::move(optimized_expr));
         }
@@ -114,18 +114,18 @@ std::string CommonSubexprPass::generate_expr_hash(const Expr* expr) const {
     
     std::ostringstream oss;
     
-    if (auto int_expr = dynamic_cast<IntegerExpr*>(expr)) {
+    if (auto int_expr = dynamic_cast<const IntegerExpr*>(expr)) {
         oss << "INT:" << int_expr->get_value();
-    } else if (auto id_expr = dynamic_cast<IdExpr*>(expr)) {
+    } else if (auto id_expr = dynamic_cast<const IdExpr*>(expr)) {
         oss << "ID:" << id_expr->get_id();
-    } else if (auto binary_op = dynamic_cast<BinaryOpExpr*>(expr)) {
+    } else if (auto binary_op = dynamic_cast<const BinaryOpExpr*>(expr)) {
         oss << "BIN:" << binary_op->get_op() << "(" 
             << generate_expr_hash(binary_op->get_lhs()) << ","
             << generate_expr_hash(binary_op->get_rhs()) << ")";
-    } else if (auto unary_op = dynamic_cast<UnaryOpExpr*>(expr)) {
+    } else if (auto unary_op = dynamic_cast<const UnaryOpExpr*>(expr)) {
         oss << "UNARY:" << unary_op->get_op() << "(" 
             << generate_expr_hash(unary_op->get_expr()) << ")";
-    } else if (auto func_call = dynamic_cast<FunctionCallExpr*>(expr)) {
+    } else if (auto func_call = dynamic_cast<const FunctionCallExpr*>(expr)) {
         oss << "CALL:" << func_call->get_function_name() << "(";
         const auto& args = func_call->get_arguments();
         for (size_t i = 0; i < args.size(); ++i) {
@@ -154,13 +154,14 @@ bool CommonSubexprPass::should_cache_expr(Expr* expr) const {
             auto rhs = binary_op->get_rhs();
             
             // 如果两个操作数都是常量，不值得缓存
-            if (lhs->is_constant() && rhs->is_constant()) {
+            Context dummy_context;
+            if (lhs->is_constant(dummy_context) && rhs->is_constant(dummy_context)) {
                 return false;
             }
             
             // 如果操作数是简单变量或常量，且操作简单，不值得缓存
-            if ((dynamic_cast<IdExpr*>(lhs) || dynamic_cast<IntegerExpr*>(lhs)) &&
-                (dynamic_cast<IdExpr*>(rhs) || dynamic_cast<IntegerExpr*>(rhs))) {
+            if ((dynamic_cast<const IdExpr*>(lhs) || dynamic_cast<const IntegerExpr*>(lhs)) &&
+                (dynamic_cast<const IdExpr*>(rhs) || dynamic_cast<const IntegerExpr*>(rhs))) {
                 return op == "*" || op == "/" || op == "%"; // 只缓存复杂运算
             }
             
@@ -171,6 +172,7 @@ bool CommonSubexprPass::should_cache_expr(Expr* expr) const {
         const std::string& op = unary_op->get_op();
         return op == "-" || op == "!";
     } else if (auto func_call = dynamic_cast<FunctionCallExpr*>(expr)) {
+        (void)func_call; // 避免未使用变量警告
         // 缓存函数调用（假设是纯函数）
         return true;
     }

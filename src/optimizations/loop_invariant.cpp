@@ -11,7 +11,7 @@ void LoopInvariantPass::run(ProgramWithFunctions& program, Context& context) {
 
 void LoopInvariantPass::optimize_function(FunctionDecl* func, Context& context) {
     if (func->get_body()) {
-        auto loops = find_loops(func->get_body());
+        auto loops = find_loops(const_cast<Stmt*>(func->get_body()));
         for (const auto& loop_info : loops) {
             optimize_loop(loop_info, context);
         }
@@ -50,7 +50,8 @@ std::vector<LoopInvariantPass::LoopInfo> LoopInvariantPass::find_loops(Stmt* stm
 
 void LoopInvariantPass::optimize_loop(const LoopInfo& loop_info, Context& context) {
     WhileStmt* loop = loop_info.loop;
-    const auto& loop_vars = loop_info.loop_vars;
+    (void)loop_info.loop_vars; // 暂时未使用
+    (void)context; // 暂时未使用
     
     // 提取循环不变量
     auto invariant_stmts = extract_invariants(loop, context);
@@ -65,6 +66,7 @@ void LoopInvariantPass::optimize_loop(const LoopInfo& loop_info, Context& contex
 }
 
 std::vector<std::unique_ptr<Stmt>> LoopInvariantPass::extract_invariants(WhileStmt* loop, Context& context) {
+    (void)context; // 暂时未使用
     std::vector<std::unique_ptr<Stmt>> invariant_stmts;
     std::vector<std::unique_ptr<Stmt>> non_invariant_stmts;
     
@@ -74,12 +76,12 @@ std::vector<std::unique_ptr<Stmt>> LoopInvariantPass::extract_invariants(WhileSt
         auto wrapper_block = std::make_unique<BlockStmt>(std::vector<std::unique_ptr<Stmt>>{});
         wrapper_block->add_stmt(std::unique_ptr<Stmt>(loop->get_body()->clone()));
         loop->set_body(std::move(wrapper_block));
-        loop_body = dynamic_cast<BlockStmt*>(loop->get_body());
+        loop_body = dynamic_cast<BlockStmt*>(const_cast<Stmt*>(loop->get_body()));
     }
     
     const auto& stmts = loop_body->get_stmts();
     for (const auto& stmt : stmts) {
-        if (is_invariant_stmt(stmt.get(), loop)) {
+        if (is_invariant_stmt(const_cast<Stmt*>(stmt.get()), loop)) {
             invariant_stmts.push_back(std::unique_ptr<Stmt>(stmt->clone()));
         } else {
             non_invariant_stmts.push_back(std::unique_ptr<Stmt>(stmt->clone()));
@@ -97,44 +99,40 @@ std::vector<std::unique_ptr<Stmt>> LoopInvariantPass::extract_invariants(WhileSt
 
 bool LoopInvariantPass::is_invariant_stmt(Stmt* stmt, WhileStmt* loop) const {
     if (auto expr_stmt = dynamic_cast<ExprStmt*>(stmt)) {
-        return is_invariant(const_cast<Expr*>(expr_stmt->get_expr()), loop);
+        auto loop_vars = collect_loop_variables(loop);
+        return is_invariant(const_cast<Expr*>(expr_stmt->get_expr()), loop_vars);
     } else if (auto decl_stmt = dynamic_cast<DeclStmt*>(stmt)) {
         if (decl_stmt->get_expr()) {
-            return is_invariant(const_cast<Expr*>(decl_stmt->get_expr()), loop);
+            auto loop_vars = collect_loop_variables(loop);
+            return is_invariant(const_cast<Expr*>(decl_stmt->get_expr()), loop_vars);
         }
         return true; // 没有初始化的声明是不变的
     } else if (auto assign_stmt = dynamic_cast<AssignExpr*>(stmt)) {
-        return is_invariant(const_cast<Expr*>(assign_stmt->get_expr()), loop);
+        auto loop_vars = collect_loop_variables(loop);
+        return is_invariant(const_cast<Expr*>(assign_stmt->get_expr()), loop_vars);
     }
     
     return false;
 }
 
-bool LoopInvariantPass::is_invariant(Expr* expr, WhileStmt* loop) const {
-    if (!expr) return true;
-    
-    // 收集循环中可能变化的变量
-    auto loop_vars = collect_loop_variables(loop);
-    
-    return is_invariant(expr, loop_vars);
-}
-
 bool LoopInvariantPass::is_invariant(Expr* expr, const std::unordered_set<std::string>& loop_vars) const {
     if (!expr) return true;
     
-    if (auto int_expr = dynamic_cast<IntegerExpr*>(expr)) {
+    if (auto int_expr = dynamic_cast<const IntegerExpr*>(expr)) {
+        (void)int_expr; // 避免未使用变量警告
         return true; // 常量总是不变的
-    } else if (auto id_expr = dynamic_cast<IdExpr*>(expr)) {
+    } else if (auto id_expr = dynamic_cast<const IdExpr*>(expr)) {
         // 检查变量是否在循环中变化
         return loop_vars.find(id_expr->get_id()) == loop_vars.end();
-    } else if (auto binary_op = dynamic_cast<BinaryOpExpr*>(expr)) {
+    } else if (auto binary_op = dynamic_cast<const BinaryOpExpr*>(expr)) {
         // 二元运算：两个操作数都必须是不变的
-                return is_invariant(const_cast<Expr*>(binary_op->get_lhs()), loop_vars) &&
+        return is_invariant(const_cast<Expr*>(binary_op->get_lhs()), loop_vars) &&
                is_invariant(const_cast<Expr*>(binary_op->get_rhs()), loop_vars);
-    } else if (auto unary_op = dynamic_cast<UnaryOpExpr*>(expr)) {
+    } else if (auto unary_op = dynamic_cast<const UnaryOpExpr*>(expr)) {
         // 一元运算：操作数必须是不变的
         return is_invariant(const_cast<Expr*>(unary_op->get_expr()), loop_vars);
-    } else if (auto func_call = dynamic_cast<FunctionCallExpr*>(expr)) {
+    } else if (auto func_call = dynamic_cast<const FunctionCallExpr*>(expr)) {
+        (void)func_call; // 避免未使用变量警告
         // 函数调用：假设有副作用，不是不变量
         return false;
     }
@@ -170,8 +168,7 @@ void LoopInvariantPass::collect_assigned_vars(Stmt* stmt, std::unordered_set<std
     }
 }
 
-std::unique_ptr<Stmt> LoopInvariantPass::create_optimized_loop_body(WhileStmt* loop, 
-                                                                   const std::vector<std::unique_ptr<Stmt>>& invariant_stmts) {
+std::unique_ptr<Stmt> LoopInvariantPass::create_optimized_loop_body(WhileStmt* loop, const std::vector<std::unique_ptr<Stmt>>& invariant_stmts) {
     // 创建新的循环体，包含不变量语句
     auto new_body = std::make_unique<BlockStmt>(std::vector<std::unique_ptr<Stmt>>{});
     
