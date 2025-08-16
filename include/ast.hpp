@@ -37,6 +37,8 @@ public:
     // New: Virtual function to get complexity score for optimization
     virtual int get_complexity() const { return 1; }
     virtual const std::string& get_expr_type() const { return ""; }
+    // New: Virtual function to clone expression
+    virtual Expr* clone() const = 0;
     int result_reg = 0;
 };
 
@@ -57,6 +59,7 @@ public:
     int evaluate_constant(Context& context) const override { return value; }
     int get_value() const { return value; }
     const std::string& get_expr_type() const override { return "Integer"; }
+    Expr* clone() const override { return new IntegerExpr(value, result_reg); }
 };
 
 // Represents a variable identifier
@@ -78,6 +81,7 @@ public:
         return (context.const_val.find(id) == context.const_val.end() ? 0 : context.const_val.at(id));
     }
     void scan_unused(Context& context) const override;
+    Expr* clone() const override { return new IdExpr(id); }
 };
 
 // Represents a binary operation
@@ -123,6 +127,12 @@ public:
     const Expr* get_rhs() const { return rhs.get(); }
     const std::string& get_op() const { return op; }
     const std::string& get_expr_type() const override { return "BinaryOp"; }
+    Expr* clone() const override { 
+        return new BinaryOpExpr(op, std::unique_ptr<Expr>(lhs->clone()), std::unique_ptr<Expr>(rhs->clone())); 
+    }
+    // Setter methods for optimizations
+    void set_lhs(std::unique_ptr<Expr> new_lhs) { lhs = std::move(new_lhs); }
+    void set_rhs(std::unique_ptr<Expr> new_rhs) { rhs = std::move(new_rhs); }
 };
 
 // Represents a unary operation
@@ -152,8 +162,13 @@ public:
     const Expr* get_expr() const { return expr.get(); }
     const std::string& get_op() const { return op; }
     const std::string& get_expr_type() const override { return "UnaryOp"; }
+    Expr* clone() const override { 
+        return new UnaryOpExpr(op, std::unique_ptr<Expr>(expr->clone())); 
+    }
     void scan_const_variables(Context& context) const override;
     void scan_unused(Context& context) const override;
+    // Setter methods for optimizations
+    void set_expr(std::unique_ptr<Expr> new_expr) { expr = std::move(new_expr); }
 };
 
 // Represents an assignment expression
@@ -175,6 +190,12 @@ public:
     const IdExpr* get_id() const { return id.get(); }
     const Expr* get_expr() const { return expr.get(); }
     const std::string& get_expr_type() const override { return "UnaryOp"; }
+    Expr* clone() const override { 
+        return new AssignExpr(std::unique_ptr<IdExpr>(new IdExpr(id->get_id())), 
+                             std::unique_ptr<Expr>(expr->clone())); 
+    }
+    // Setter methods for optimizations
+    void set_expr(std::unique_ptr<Expr> new_expr) { expr = std::move(new_expr); }
 };
 
 // Represents a statement that is just an expression
@@ -191,6 +212,8 @@ public:
     void scan_unused(Context& context) const override;
     // Accessor method for optimizations
     const Expr* get_expr() const { return expr.get(); }
+    // Setter method for optimizations
+    void set_expr(std::unique_ptr<Expr> new_expr) { expr = std::move(new_expr); }
 };
 
 // Represents a return statement
@@ -207,6 +230,8 @@ public:
     void scan_unused(Context& context) const override;
     // Accessor method for optimizations
     const Expr* get_expr() const { return expr.get(); }
+    // Setter method for optimizations
+    void set_expr(std::unique_ptr<Expr> new_expr) { expr = std::move(new_expr); }
 };
 
 // Represents a block of statements
@@ -223,6 +248,11 @@ public:
     }
     void scan_const_variables(Context& context) const override;
     void scan_unused(Context& context) const override;
+    // Accessor methods for optimizations
+    const StmtList& get_stmts() const { return stmts; }
+    // Setter methods for optimizations
+    void add_stmt(std::unique_ptr<Stmt> stmt) { stmts.push_back(std::move(stmt)); }
+    void clear_stmts() { stmts.clear(); }
 };
 
 // Represents an if-else statement
@@ -259,6 +289,11 @@ public:
     }
     void scan_const_variables(Context& context) const override;
     void scan_unused(Context& context) const override;
+    // Accessor methods for optimizations
+    const Expr* get_condition() const { return condition.get(); }
+    const Stmt* get_body() const { return body.get(); }
+    // Setter methods for optimizations
+    void set_body(std::unique_ptr<Stmt> new_body) { body = std::move(new_body); }
 };
 
 // Represents a break statement
@@ -331,6 +366,8 @@ public:
     const ParameterList& get_parameters() const { return parameters; }
     const Stmt* get_body() const { return body.get(); }
     bool has_body() const { return body != nullptr; }
+    // Setter methods for optimizations
+    void set_body(std::unique_ptr<Stmt> new_body) { body = std::move(new_body); }
     
     void generate_code(std::ostream& os, Context& context) const override;
     void collect_variables(std::unordered_set<std::string>& variables) const override {
@@ -355,6 +392,7 @@ public:
         : functions(std::move(_functions)) {}
     
     const FunctionDeclList& get_functions() const { return functions; }
+    FunctionDeclList& get_functions() { return functions; }
     bool has_functions() const { return !functions.empty(); }
     void scan_const_variables(Context& context) const override;
     void scan_unused(Context& context) const override;
@@ -390,6 +428,13 @@ public:
     // Function calls are not pure (they may have side effects)
     bool is_pure() const override { return false; }
     const std::string& get_expr_type() const override { return "FunctionCall"; }
+    Expr* clone() const override { 
+        ArgumentList cloned_args;
+        for (const auto& arg : arguments) {
+            cloned_args.push_back(std::unique_ptr<Expr>(arg->clone()));
+        }
+        return new FunctionCallExpr(function_name, std::move(cloned_args)); 
+    }
 };
 
 #endif // TOYC_AST_HPP
