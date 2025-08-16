@@ -10,6 +10,10 @@
 #include "optimizations.hpp"
 #include "optimizations/scan_const.cpp"
 #include "optimizations/scan_unused.cpp"
+#include "optimizations/common_subexpr.cpp"
+#include "optimizations/loop_invariant.cpp"
+#include "optimizations/strength_reduction.cpp"
+#include "optimizations/tail_recursion.cpp"
 
 // External variables from parser
 extern std::unique_ptr<ProgramWithFunctions> parsed_program;
