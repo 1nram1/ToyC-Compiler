@@ -162,6 +162,7 @@ bool CommonSubexprPass::should_cache_expr(Expr* expr) const {
         return op == "-" || op == "!";
     } else if (auto func_call = dynamic_cast<FunctionCallExpr*>(expr)) {
         // 缓存函数调用（假设是纯函数）
+        (void)func_call; // 避免未使用变量警告
         return true;
     }
     

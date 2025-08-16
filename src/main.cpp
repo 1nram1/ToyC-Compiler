@@ -507,12 +507,16 @@ void DeclStmt::generate_code(std::ostream& os, Context& context) const {
 
 void EmptyStmt::generate_code(std::ostream& os, Context& context) const {
     // Empty statement generates no code
+    (void)os; // 避免未使用参数警告
+    (void)context; // 避免未使用参数警告
 }
 
 // Implementation for new function-related AST nodes
 
 void Parameter::generate_code(std::ostream& os, Context& context) const {
     // Parameters don't generate code directly, they're handled by function declarations
+    (void)os; // 避免未使用参数警告
+    (void)context; // 避免未使用参数警告
 }
 
 void FunctionDecl::generate_code(std::ostream& os, Context& context) const {
@@ -677,6 +681,8 @@ void generate_error_labels(std::ostream& os) {
 }
 
 int main(int argc, char* argv[]) {
+    (void)argc; // 避免未使用参数警告
+    (void)argv; // 避免未使用参数警告
     // Parse the input
     if (yyparse() != 0) {
         std::cerr << "Parsing failed!" << std::endl;

@@ -12,7 +12,7 @@ void LoopInvariantPass::run(ProgramWithFunctions& program, Context& context) {
 void LoopInvariantPass::optimize_function(FunctionDecl* func, Context& context) {
     if (func->get_body()) {
         auto loops = find_loops(func->get_body());
-        for (const auto& loop_info : loops) {
+        for (auto& loop_info : loops) {
             optimize_loop(loop_info, context);
         }
     }
@@ -25,23 +25,31 @@ std::vector<LoopInvariantPass::LoopInfo> LoopInvariantPass::find_loops(Stmt* stm
         LoopInfo info;
         info.loop = while_stmt;
         info.loop_vars = collect_loop_variables(while_stmt);
-        loops.push_back(info);
+        loops.push_back(std::move(info));
         
         // 递归查找嵌套循环
         auto nested_loops = find_loops(while_stmt->get_body());
-        loops.insert(loops.end(), nested_loops.begin(), nested_loops.end());
+        loops.insert(loops.end(), 
+                    std::make_move_iterator(nested_loops.begin()), 
+                    std::make_move_iterator(nested_loops.end()));
     } else if (auto block = dynamic_cast<BlockStmt*>(stmt)) {
         for (const auto& s : block->get_stmts()) {
             auto nested_loops = find_loops(s.get());
-            loops.insert(loops.end(), nested_loops.begin(), nested_loops.end());
+            loops.insert(loops.end(), 
+                        std::make_move_iterator(nested_loops.begin()), 
+                        std::make_move_iterator(nested_loops.end()));
         }
     } else if (auto if_stmt = dynamic_cast<IfStmt*>(stmt)) {
         auto then_loops = find_loops(if_stmt->get_then_stmt());
-        loops.insert(loops.end(), then_loops.begin(), then_loops.end());
+        loops.insert(loops.end(), 
+                    std::make_move_iterator(then_loops.begin()), 
+                    std::make_move_iterator(then_loops.end()));
         
         if (if_stmt->get_else_stmt()) {
             auto else_loops = find_loops(if_stmt->get_else_stmt());
-            loops.insert(loops.end(), else_loops.begin(), else_loops.end());
+            loops.insert(loops.end(), 
+                        std::make_move_iterator(else_loops.begin()), 
+                        std::make_move_iterator(else_loops.end()));
         }
     }
     
@@ -50,7 +58,7 @@ std::vector<LoopInvariantPass::LoopInfo> LoopInvariantPass::find_loops(Stmt* stm
 
 void LoopInvariantPass::optimize_loop(const LoopInfo& loop_info, Context& context) {
     WhileStmt* loop = loop_info.loop;
-    const auto& loop_vars = loop_info.loop_vars;
+    (void)loop_info.loop_vars; // 避免未使用变量警告
     
     // 提取循环不变量
     auto invariant_stmts = extract_invariants(loop, context);
@@ -68,6 +76,7 @@ void LoopInvariantPass::optimize_loop(const LoopInfo& loop_info, Context& contex
 }
 
 std::vector<std::unique_ptr<Stmt>> LoopInvariantPass::extract_invariants(WhileStmt* loop, Context& context) {
+    (void)context; // 避免未使用参数警告
     std::vector<std::unique_ptr<Stmt>> invariant_stmts;
     std::vector<std::unique_ptr<Stmt>> non_invariant_stmts;
     
@@ -128,6 +137,7 @@ bool LoopInvariantPass::is_invariant(Expr* expr, const std::unordered_set<std::s
     if (!expr) return true;
     
     if (auto int_expr = dynamic_cast<IntegerExpr*>(expr)) {
+        (void)int_expr; // 避免未使用变量警告
         return true; // 常量总是不变的
     } else if (auto id_expr = dynamic_cast<IdExpr*>(expr)) {
         // 检查变量是否在循环中变化
@@ -141,6 +151,7 @@ bool LoopInvariantPass::is_invariant(Expr* expr, const std::unordered_set<std::s
         return is_invariant(unary_op->get_expr(), loop_vars);
     } else if (auto func_call = dynamic_cast<FunctionCallExpr*>(expr)) {
         // 函数调用：假设有副作用，不是不变量
+        (void)func_call; // 避免未使用变量警告
         return false;
     }
     

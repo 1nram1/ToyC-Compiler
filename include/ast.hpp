@@ -18,18 +18,18 @@ public:
     // Pure virtual function for generating code
     virtual void generate_code(std::ostream& os, Context& context) const = 0;
     // Virtual function for collecting variable names (default: do nothing)
-    virtual void collect_variables(std::unordered_set<std::string>& variables) const {}
-    virtual void scan_const_variables(Context& context) const {};
-    virtual void scan_unused(Context& context) const {};
+    virtual void collect_variables(std::unordered_set<std::string>& variables) const { (void)variables; }
+    virtual void scan_const_variables(Context& context) const { (void)context; }
+    virtual void scan_unused(Context& context) const { (void)context; }
 };
 
 // Base class for all expressions
 class Expr : public Node {
 public:
     // Virtual function to check if expression is constant
-    virtual bool is_constant(Context& context) const { return false; }
+    virtual bool is_constant(Context& context) const { (void)context; return false; }
     // Virtual function to evaluate constant expression
-    virtual int evaluate_constant(Context& context) const { return 0; }
+    virtual int evaluate_constant(Context& context) const { (void)context; return 0; }
     // New: Virtual function to check if expression is pure (no side effects)
     virtual bool is_pure() const { return true; }
     // New: Virtual function for strength reduction analysis
@@ -59,8 +59,8 @@ private:
 public:
     IntegerExpr(int val, int res_reg = 0) : value(val) {result_reg = res_reg;}
     void generate_code(std::ostream& os, Context& context) const override;
-    bool is_constant(Context& context) const override { return true; }
-    int evaluate_constant(Context& context) const override { return value; }
+    bool is_constant(Context& context) const override { (void)context; return true; }
+    int evaluate_constant(Context& context) const override { (void)context; return value; }
     int get_value() const { return value; }
     std::string get_expr_type() const override { return "Integer"; }
     Expr* clone() const override { return new IntegerExpr(value, result_reg); }

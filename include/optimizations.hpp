@@ -109,6 +109,15 @@ private:
         WhileStmt* loop;
         std::unordered_set<std::string> loop_vars;
         std::vector<std::unique_ptr<Stmt>> invariant_stmts;
+        
+        // 添加移动构造函数和移动赋值运算符
+        LoopInfo() = default;
+        LoopInfo(LoopInfo&&) = default;
+        LoopInfo& operator=(LoopInfo&&) = default;
+        
+        // 删除复制构造函数和复制赋值运算符
+        LoopInfo(const LoopInfo&) = delete;
+        LoopInfo& operator=(const LoopInfo&) = delete;
     };
     
     void optimize_function(FunctionDecl* func, Context& context);

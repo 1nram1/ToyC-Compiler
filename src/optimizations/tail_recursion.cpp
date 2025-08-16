@@ -67,6 +67,8 @@ bool TailRecursionPass::is_tail_call(Stmt* stmt, const std::string& func_name) c
 
 std::unique_ptr<Stmt> TailRecursionPass::convert_to_loop(FunctionDecl* func, Context& context) {
     const std::string& func_name = func->get_name();
+    (void)func_name; // 避免未使用变量警告
+    (void)context; // 避免未使用参数警告
     const auto& params = func->get_parameters();
     
     if (params.size() != 2) {

@@ -64,5 +64,5 @@ void ProgramWithFunctions::scan_const_variables(Context& context) const {
     }
 }
 void FunctionCallExpr::scan_const_variables(Context& context) const {
-    
+    (void)context;
 }
