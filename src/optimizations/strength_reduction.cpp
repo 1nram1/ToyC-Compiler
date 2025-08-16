@@ -73,13 +73,13 @@ std::unique_ptr<Expr> StrengthReductionPass::optimize_binary_op(BinaryOpExpr* ex
                 return std::make_unique<IntegerExpr>(0);
             } else if (value == 1) {
                 // x * 1 -> x
-                return std::unique_ptr<Expr>(expr->get_rhs()->clone());
+                return std::unique_ptr<Expr>(const_cast<Expr*>(expr->get_rhs())->clone());
             } else if (is_power_of_two(value)) {
                 // x * 2^n -> x << n
                 int shift = get_power_of_two(value);
                 auto shift_expr = std::make_unique<BinaryOpExpr>(
                     "<<", 
-                    std::unique_ptr<Expr>(expr->get_rhs()->clone()),
+                    std::unique_ptr<Expr>(const_cast<Expr*>(expr->get_rhs())->clone()),
                     std::make_unique<IntegerExpr>(shift)
                 );
                 return shift_expr;
@@ -94,13 +94,13 @@ std::unique_ptr<Expr> StrengthReductionPass::optimize_binary_op(BinaryOpExpr* ex
                 return std::make_unique<IntegerExpr>(0);
             } else if (value == 1) {
                 // x * 1 -> x
-                return std::unique_ptr<Expr>(expr->get_lhs()->clone());
+                return std::unique_ptr<Expr>(const_cast<Expr*>(expr->get_lhs())->clone());
             } else if (is_power_of_two(value)) {
                 // x * 2^n -> x << n
                 int shift = get_power_of_two(value);
                 auto shift_expr = std::make_unique<BinaryOpExpr>(
                     "<<", 
-                    std::unique_ptr<Expr>(expr->get_lhs()->clone()),
+                    std::unique_ptr<Expr>(const_cast<Expr*>(expr->get_lhs())->clone()),
                     std::make_unique<IntegerExpr>(shift)
                 );
                 return shift_expr;
@@ -115,13 +115,13 @@ std::unique_ptr<Expr> StrengthReductionPass::optimize_binary_op(BinaryOpExpr* ex
             int value = int_rhs->get_value();
             if (value == 1) {
                 // x / 1 -> x
-                return std::unique_ptr<Expr>(expr->get_lhs()->clone());
+                return std::unique_ptr<Expr>(const_cast<Expr*>(expr->get_lhs())->clone());
             } else if (is_power_of_two(value)) {
                 // x / 2^n -> x >> n (对于正数)
                 int shift = get_power_of_two(value);
                 auto shift_expr = std::make_unique<BinaryOpExpr>(
                     ">>", 
-                    std::unique_ptr<Expr>(expr->get_lhs()->clone()),
+                    std::unique_ptr<Expr>(const_cast<Expr*>(expr->get_lhs())->clone()),
                     std::make_unique<IntegerExpr>(shift)
                 );
                 return shift_expr;
@@ -142,7 +142,7 @@ std::unique_ptr<Expr> StrengthReductionPass::optimize_binary_op(BinaryOpExpr* ex
                 int mask = value - 1;
                 auto and_expr = std::make_unique<BinaryOpExpr>(
                     "&", 
-                    std::unique_ptr<Expr>(expr->get_lhs()->clone()),
+                    std::unique_ptr<Expr>(const_cast<Expr*>(expr->get_lhs())->clone()),
                     std::make_unique<IntegerExpr>(mask)
                 );
                 return and_expr;
@@ -155,13 +155,13 @@ std::unique_ptr<Expr> StrengthReductionPass::optimize_binary_op(BinaryOpExpr* ex
         if (auto int_lhs = dynamic_cast<IntegerExpr*>(const_cast<Expr*>(expr->get_lhs()))) {
             if (int_lhs->get_value() == 0) {
                 // 0 + x -> x
-                return std::unique_ptr<Expr>(expr->get_rhs()->clone());
+                return std::unique_ptr<Expr>(const_cast<Expr*>(expr->get_rhs())->clone());
             }
         }
         if (auto int_rhs = dynamic_cast<IntegerExpr*>(const_cast<Expr*>(expr->get_rhs()))) {
             if (int_rhs->get_value() == 0) {
                 // x + 0 -> x
-                return std::unique_ptr<Expr>(expr->get_lhs()->clone());
+                return std::unique_ptr<Expr>(const_cast<Expr*>(expr->get_lhs())->clone());
             }
         }
     }
@@ -171,7 +171,7 @@ std::unique_ptr<Expr> StrengthReductionPass::optimize_binary_op(BinaryOpExpr* ex
         if (auto int_rhs = dynamic_cast<IntegerExpr*>(const_cast<Expr*>(expr->get_rhs()))) {
             if (int_rhs->get_value() == 0) {
                 // x - 0 -> x
-                return std::unique_ptr<Expr>(expr->get_lhs()->clone());
+                return std::unique_ptr<Expr>(const_cast<Expr*>(expr->get_lhs())->clone());
             }
         }
     }

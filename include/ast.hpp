@@ -129,8 +129,6 @@ public:
     // Accessor methods for optimizations
     const Expr* get_lhs() const { return lhs.get(); }
     const Expr* get_rhs() const { return rhs.get(); }
-    Expr* get_lhs() { return lhs.get(); }
-    Expr* get_rhs() { return rhs.get(); }
     const std::string& get_op() const { return op; }
     std::string get_expr_type() const override { return "BinaryOp"; }
     Expr* clone() const override { 
@@ -166,7 +164,6 @@ public:
     }
     // Accessor methods for optimizations
     const Expr* get_expr() const { return expr.get(); }
-    Expr* get_expr() { return expr.get(); }
     const std::string& get_op() const { return op; }
     std::string get_expr_type() const override { return "UnaryOp"; }
     Expr* clone() const override { 
@@ -196,8 +193,6 @@ public:
     // Accessor methods for optimizations
     const IdExpr* get_id() const { return id.get(); }
     const Expr* get_expr() const { return expr.get(); }
-    IdExpr* get_id() { return id.get(); }
-    Expr* get_expr() { return expr.get(); }
     std::string get_expr_type() const override { return "UnaryOp"; }
     Expr* clone() const override { 
         return new AssignExpr(std::unique_ptr<IdExpr>(new IdExpr(id->get_id())), 
@@ -221,7 +216,6 @@ public:
     void scan_unused(Context& context) const override;
     // Accessor method for optimizations
     const Expr* get_expr() const { return expr.get(); }
-    Expr* get_expr() { return expr.get(); }
     // Setter method for optimizations
     void set_expr(std::unique_ptr<Expr> new_expr) { expr = std::move(new_expr); }
     // Clone method
@@ -244,7 +238,6 @@ public:
     void scan_unused(Context& context) const override;
     // Accessor method for optimizations
     const Expr* get_expr() const { return expr.get(); }
-    Expr* get_expr() { return expr.get(); }
     // Setter method for optimizations
     void set_expr(std::unique_ptr<Expr> new_expr) { expr = std::move(new_expr); }
     // Clone method
@@ -269,7 +262,6 @@ public:
     void scan_unused(Context& context) const override;
     // Accessor methods for optimizations
     const StmtList& get_stmts() const { return stmts; }
-    StmtList& get_stmts() { return stmts; }
     // Setter methods for optimizations
     void add_stmt(std::unique_ptr<Stmt> stmt) { stmts.push_back(std::move(stmt)); }
     void clear_stmts() { stmts.clear(); }
@@ -304,9 +296,6 @@ public:
     const Expr* get_condition() const { return condition.get(); }
     const Stmt* get_then_stmt() const { return then_stmt.get(); }
     const Stmt* get_else_stmt() const { return else_stmt.get(); }
-    Expr* get_condition() { return condition.get(); }
-    Stmt* get_then_stmt() { return then_stmt.get(); }
-    Stmt* get_else_stmt() { return else_stmt.get(); }
     // Setter methods for optimizations
     void set_then_stmt(std::unique_ptr<Stmt> new_then) { then_stmt = std::move(new_then); }
     void set_else_stmt(std::unique_ptr<Stmt> new_else) { else_stmt = std::move(new_else); }
@@ -339,8 +328,6 @@ public:
     // Accessor methods for optimizations
     const Expr* get_condition() const { return condition.get(); }
     const Stmt* get_body() const { return body.get(); }
-    Expr* get_condition() { return condition.get(); }
-    Stmt* get_body() { return body.get(); }
     // Setter methods for optimizations
     void set_body(std::unique_ptr<Stmt> new_body) { body = std::move(new_body); }
     // Clone method
@@ -384,8 +371,6 @@ public:
     // Accessor methods for optimizations
     const IdExpr* get_id() const { return id.get(); }
     const Expr* get_expr() const { return expr.get(); }
-    IdExpr* get_id() { return id.get(); }
-    Expr* get_expr() { return expr.get(); }
     // Clone method
     Stmt* clone() const override {
         return new DeclStmt(
@@ -436,7 +421,6 @@ public:
     const std::string& get_name() const { return name; }
     const ParameterList& get_parameters() const { return parameters; }
     const Stmt* get_body() const { return body.get(); }
-    Stmt* get_body() { return body.get(); }
     bool has_body() const { return body != nullptr; }
     // Setter methods for optimizations
     void set_body(std::unique_ptr<Stmt> new_body) { body = std::move(new_body); }
