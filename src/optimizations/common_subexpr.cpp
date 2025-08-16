@@ -69,8 +69,8 @@ std::unique_ptr<Expr> CommonSubexprPass::optimize_expr(Expr* expr, Context& cont
         
         // 递归优化子表达式
         if (auto binary_op = dynamic_cast<BinaryOpExpr*>(expr)) {
-            auto optimized_lhs = optimize_expr(binary_op->get_lhs(), context);
-            auto optimized_rhs = optimize_expr(binary_op->get_rhs(), context);
+            auto optimized_lhs = optimize_expr(const_cast<Expr*>(binary_op->get_lhs()), context);
+            auto optimized_rhs = optimize_expr(const_cast<Expr*>(binary_op->get_rhs()), context);
             
             if (optimized_lhs) {
                 binary_op->set_lhs(std::move(optimized_lhs));
@@ -79,7 +79,7 @@ std::unique_ptr<Expr> CommonSubexprPass::optimize_expr(Expr* expr, Context& cont
                 binary_op->set_rhs(std::move(optimized_rhs));
             }
         } else if (auto unary_op = dynamic_cast<UnaryOpExpr*>(expr)) {
-            auto optimized_subexpr = optimize_expr(unary_op->get_expr(), context);
+            auto optimized_subexpr = optimize_expr(const_cast<Expr*>(unary_op->get_expr()), context);
             if (optimized_subexpr) {
                 unary_op->set_expr(std::move(optimized_subexpr));
             }
@@ -90,8 +90,8 @@ std::unique_ptr<Expr> CommonSubexprPass::optimize_expr(Expr* expr, Context& cont
     
     // 递归优化子表达式
     if (auto binary_op = dynamic_cast<BinaryOpExpr*>(expr)) {
-        auto optimized_lhs = optimize_expr(binary_op->get_lhs(), context);
-        auto optimized_rhs = optimize_expr(binary_op->get_rhs(), context);
+        auto optimized_lhs = optimize_expr(const_cast<Expr*>(binary_op->get_lhs()), context);
+        auto optimized_rhs = optimize_expr(const_cast<Expr*>(binary_op->get_rhs()), context);
         
         if (optimized_lhs) {
             binary_op->set_lhs(std::move(optimized_lhs));
@@ -100,7 +100,7 @@ std::unique_ptr<Expr> CommonSubexprPass::optimize_expr(Expr* expr, Context& cont
             binary_op->set_rhs(std::move(optimized_rhs));
         }
     } else if (auto unary_op = dynamic_cast<UnaryOpExpr*>(expr)) {
-        auto optimized_subexpr = optimize_expr(unary_op->get_expr(), context);
+        auto optimized_subexpr = optimize_expr(const_cast<Expr*>(unary_op->get_expr()), context);
         if (optimized_subexpr) {
             unary_op->set_expr(std::move(optimized_subexpr));
         }
@@ -109,7 +109,7 @@ std::unique_ptr<Expr> CommonSubexprPass::optimize_expr(Expr* expr, Context& cont
     return nullptr;
 }
 
-std::string CommonSubexprPass::generate_expr_hash(Expr* expr) const {
+std::string CommonSubexprPass::generate_expr_hash(const Expr* expr) const {
     if (!expr) return "";
     
     std::ostringstream oss;

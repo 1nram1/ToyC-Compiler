@@ -34,14 +34,14 @@ bool TailRecursionPass::is_tail_recursive(FunctionDecl* func) const {
     if (!func->has_body()) return false;
     
     const std::string& func_name = func->get_name();
-    return is_tail_call(func->get_body(), func_name);
+    return is_tail_call(const_cast<Stmt*>(func->get_body()), func_name);
 }
 
 bool TailRecursionPass::is_tail_call(Stmt* stmt, const std::string& func_name) const {
     if (auto return_stmt = dynamic_cast<ReturnStmt*>(stmt)) {
         if (return_stmt->get_expr()) {
             // 检查返回值是否为函数调用
-            if (auto func_call = dynamic_cast<FunctionCallExpr*>(return_stmt->get_expr())) {
+            if (auto func_call = dynamic_cast<FunctionCallExpr*>(const_cast<Expr*>(return_stmt->get_expr()))) {
                 return func_call->get_function_name() == func_name;
             }
         }
@@ -53,9 +53,9 @@ bool TailRecursionPass::is_tail_call(Stmt* stmt, const std::string& func_name) c
         }
     } else if (auto if_stmt = dynamic_cast<IfStmt*>(stmt)) {
         // 检查if语句的两个分支
-        bool then_tail = is_tail_call(if_stmt->get_then_stmt(), func_name);
+        bool then_tail = is_tail_call(const_cast<Stmt*>(if_stmt->get_then_stmt()), func_name);
         bool else_tail = if_stmt->get_else_stmt() ? 
-                        is_tail_call(if_stmt->get_else_stmt(), func_name) : false;
+                        is_tail_call(const_cast<Stmt*>(if_stmt->get_else_stmt()), func_name) : false;
         return then_tail && else_tail;
     }
     

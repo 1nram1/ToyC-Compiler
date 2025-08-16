@@ -177,8 +177,8 @@ std::unique_ptr<Expr> StrengthReductionPass::optimize_binary_op(BinaryOpExpr* ex
     }
     
     // 递归优化子表达式
-    auto optimized_lhs = optimize_expr(expr->get_lhs(), context);
-    auto optimized_rhs = optimize_expr(expr->get_rhs(), context);
+    auto optimized_lhs = optimize_expr(const_cast<Expr*>(expr->get_lhs()), context);
+    auto optimized_rhs = optimize_expr(const_cast<Expr*>(expr->get_rhs()), context);
     
     if (optimized_lhs) {
         expr->set_lhs(std::move(optimized_lhs));
